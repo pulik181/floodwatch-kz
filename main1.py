@@ -9,7 +9,7 @@ import requests
 # ============================================
 # 1. НАСТРОЙКИ И ТОЧКИ МОНИТОРИНГА
 # ============================================
-TELEGRAM_TOKEN = "8878692175:AAE9pK7NFFRTzJ0z56AwmDaDRSkMQum6glI"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 CSV_FILE = "flood_data.csv"
 LOG_FILE = "system.log"
