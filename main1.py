@@ -2,9 +2,32 @@ import csv
 import json
 import logging
 import os
+import threading
 import time
 from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import requests
+
+# ============================================
+# 0. ИСПРАВЛЕНИЕ ДЛЯ RENDER (PORT SCAN FIX)
+# ============================================
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        pass  # Не засорять system.log запросами от Render
+
+def run_health_check_server():
+    """Запуск фонового веб-сервера, чтобы Render успешно прошел проверку порта"""
+    port = int(os.getenv("PORT", 8080))
+    try:
+        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+        server.serve_forever()
+    except Exception as e:
+        logging.error(f"Сбой запуска HealthCheck сервера: {e}")
 
 # ============================================
 # 1. НАСТРОЙКИ И ТОЧКИ МОНИТОРИНГА
@@ -16,7 +39,6 @@ LOG_FILE = "system.log"
 SUBSCRIBERS_FILE = "subscribers.txt"
 LANGUAGES_FILE = "user_languages.json"
 
-# Интервал автоматической фоновой проверки (900 сек = 15 минут)
 AUTO_CHECK_INTERVAL = 900 
 
 LOCATIONS = [
@@ -122,7 +144,6 @@ MESSAGES = {
     }
 }
 
-# Клавиатура выбора языка
 LANG_KEYBOARD = {
     "keyboard": [
         [{"text": "🇰🇿 Қазақша"}, {"text": "🇷🇺 Русский"}, {"text": "🇬🇧 English"}]
@@ -140,7 +161,6 @@ def get_main_keyboard(lang: str) -> dict:
         "resize_keyboard": True,
     }
 
-# Отслеживание состояний риска
 last_known_risks = {loc["name"]: "NORMAL" for loc in LOCATIONS}
 
 # ============================================
@@ -282,7 +302,6 @@ def generate_manual_report(lang: str):
     return header + "\n".join(lines)
 
 def process_background_check():
-    """Фоновая проверка раз в 15 минут. Алерт слать каждому на ЕГО языке."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     raw_alerts = []
 
@@ -302,7 +321,6 @@ def process_background_check():
 
         last_known_risks[name] = new_risk
 
-    # Если есть аномалии, формируем текст под язык каждого пользователя
     if raw_alerts:
         for chat_id in subscribers:
             lang = get_user_lang(chat_id)
@@ -323,7 +341,11 @@ def process_background_check():
 # ============================================
 def main():
     print("=" * 60)
-    print("🤖 Запуск СППР FloodWatch KZ (Мультиязычный режим)...")
+    print("🤖 Запуск СППР FloodWatch KZ (Мультиязычный режим + Render Fix)...")
+    
+    # ФОНОВЫЙ ЗАПУСК ВЕБ-СЕРВЕРА ДЛЯ RENDER
+    threading.Thread(target=run_health_check_server, daemon=True).start()
+    
     print(f"Активных подписчиков: {len(subscribers)}")
     print(f"Интервал фонового мониторинга: каждые {AUTO_CHECK_INTERVAL} сек.")
     print("=" * 60)
@@ -357,11 +379,9 @@ def main():
 
                         logging.info(f"Команда '{text}' от chat_id: {chat_id} (Язык: {lang})")
 
-                        # 1. Стартовое приветствие и выбор языка
                         if text == "/start" or text in ["🌐 Сменить язык", "🌐 Тілді ауыстыру", "🌐 Change Language", "/lang"]:
                             send_telegram_message(chat_id, msg["select_lang_prompt"], reply_markup=LANG_KEYBOARD)
 
-                        # 2. Обработка кнопок выбора языка
                         elif text == "🇰🇿 Қазақша":
                             save_user_language(chat_id, "kz")
                             send_telegram_message(chat_id, MESSAGES["kz"]["lang_saved"])
@@ -372,13 +392,11 @@ def main():
                             save_user_language(chat_id, "en")
                             send_telegram_message(chat_id, MESSAGES["en"]["lang_saved"])
 
-                        # 3. Ручной запрос статуса погоды (работает на любом из 3 языков)
                         elif text in ["/status", "📊 Статус погоды", "📊 Ауа райы статусы", "📊 Weather Status"]:
                             send_telegram_message(chat_id, msg["polling"])
                             report = generate_manual_report(lang)
                             send_telegram_message(chat_id, report)
 
-                        # 4. Справка по системе (работает на любом из 3 языков)
                         elif text in ["/help", "ℹ️ Помощь / О системе", "ℹ️ Көмек / Жүйе туралы", "ℹ️ Help / About"]:
                             send_telegram_message(chat_id, msg["help"])
 
