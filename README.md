@@ -63,38 +63,11 @@ The application functions as a background microservice polling high-altitude gri
 ## 📐 Mathematical Risk Evaluation Model
 
 The danger level is calculated using a two-factor logical matrix:
-
-$$
-\text{Risk} = \begin{cases} 
-\text{HIGH\_RISK}, & R \ge 20.0\text{ mm} \lor (T \ge 18.0^\circ\text{C} \land R \ge 15.0\text{ mm}) \\ 
-\text{MEDIUM\_RISK}, & T \ge 15.0^\circ\text{C} \land R \ge 5.0\text{ mm} \\ 
-\text{NORMAL}, & \text{otherwise} 
-\end{cases}
-$$
-
-where $R$ is hourly precipitation (mm), and $T$ is air temperature at 2 m height (°C).
-
----
-
-## 📊 Comparison: Macro-Systems vs. Local Micro-DSS
-
-| Parameter | National Macro-Systems (Tasqyn / Delft-FEWS) | Local Micro-DSS (FloodWatch KZ) |
-| --- | --- | --- |
-| **Primary Focus** | Large lowland river basins & spring snowmelt | High-altitude mountain gorges, flash floods & debris flows |
-| **Response Horizon** | Long-term forecasting (24 hours to 30 days) | **Express interception (1–3 hours lead time)** |
-| **Data Sources** | Satellites, physical water gauges, hydrodynamics | Open-Meteo REST API (high polling frequency) |
-| **Purpose** | Strategic planning for Emergency Services & Ministries | **Rapid alert dispatch for local operators & residents** |
-| **Spam Suppression** | None (operates via periodic static reports) | **Finite State Machine (FSM) to prevent Alert Fatigue** |
-
----
-
-## 🚀 Development Roadmap (Vision 2.0 for Full Scaling)
-
-For future commercial/state deployment, the following implementation stages are planned:
-
 ```text
-[ Stage 1: MVP ] ──► [ Stage 2: IoT & Satellites ] ──► [ Stage 3: Integrations ] ──► [ Stage 4: Ecosystem ]
-
+```text
+Risk = HIGH_RISK,   if R >= 20.0 mm OR (T >= 18.0°C AND R >= 15.0 mm)
+Risk = MEDIUM_RISK, if T >= 15.0°C AND R >= 5.0 mm
+Risk = NORMAL,      otherwise
 ```
 
 * **Physical IoT Sensor Integration:** Installation of ultrasonic and radar water level gauges along Medeu, Talgar, Esik, and Kaskelen riverbeds for real-time water level tracking.
