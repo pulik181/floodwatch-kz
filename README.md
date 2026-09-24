@@ -64,7 +64,13 @@ The application functions as a background microservice polling high-altitude gri
 
 The danger level is calculated using a two-factor logical matrix:
 
-$$\text{Risk} = \begin{cases} \text{HIGH\_RISK}, & R \ge 20.0\text{ mm} \lor (T \ge 18.0^\circ\text{C} \land R \ge 15.0\text{ mm}) \\ \text{MEDIUM\_RISK}, & T \ge 15.0^\circ\text{C} \land R \ge 5.0\text{ mm} \\ \text{NORMAL}, & \text{otherwise} \end{cases}$$
+$$
+\text{Risk} = \begin{cases} 
+\text{HIGH\_RISK}, & R \ge 20.0\text{ mm} \lor (T \ge 18.0^\circ\text{C} \land R \ge 15.0\text{ mm}) \\ 
+\text{MEDIUM\_RISK}, & T \ge 15.0^\circ\text{C} \land R \ge 5.0\text{ mm} \\ 
+\text{NORMAL}, & \text{otherwise} 
+\end{cases}
+$$
 
 where $R$ is hourly precipitation (mm), and $T$ is air temperature at 2 m height (°C).
 
